@@ -1,1 +1,8 @@
-const CACHE='english90-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./app.js','./manifest.json','./icon.svg']))));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));self.addEventListener('fetch',e=>{if(e.request.method==='GET'&&new URL(e.request.url).origin===self.location.origin)e.respondWith(caches.match(e.request).then(x=>x||fetch(e.request)));});
+// Retire only this prototype's cache and registration.
+self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
+self.addEventListener('activate',event=>event.waitUntil((async()=>{
+  await caches.delete('english90-v1');
+  await self.registration.unregister();
+  const pages=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+  for(const page of pages) if(page.url.startsWith(self.registration.scope)) await page.navigate(new URL('../../',self.registration.scope).href);
+})()));
