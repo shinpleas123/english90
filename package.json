@@ -1,0 +1,14 @@
+{
+  "name": "english90-coach",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/coach.test.mjs tests/speech.test.mjs",
+    "test:browser": "node tests/app.browser.mjs && node tests/speech.browser.mjs && node tests/pwa.browser.mjs",
+    "build:offline": "node tools/build-sw.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.58.2"
+  }
+}

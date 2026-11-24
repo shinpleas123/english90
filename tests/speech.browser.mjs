@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
+const pcm=await readFile(new URL('../lib/pcm.mjs',import.meta.url));
 const speech = await readFile(new URL('../lib/speech.mjs', import.meta.url));
 let browser;
 try {
@@ -11,6 +12,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const url = 'https://english90.test';
   await context.route(url + '/**', route => {
+    if (new URL(route.request().url()).pathname === '/pcm.mjs') return route.fulfill({contentType:'application/javascript',body:pcm});
     if (new URL(route.request().url()).pathname === '/speech.mjs') {
       return route.fulfill({ contentType: 'application/javascript', body: speech });
     }

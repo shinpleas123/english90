@@ -45,3 +45,4 @@ nav button[aria-current=page]{color:var(--green);box-shadow:inset 0 3px var(--gr
 @media(max-width:380px){.taskrow{gap:8px}.switch button{padding-inline:8px}.mast-inner{min-height:54px}.widebreak{display:block}.bar,.actions{gap:6px}}
 @media(min-width:820px){main{padding-top:36px}.hero{margin-top:20px}.mast-inner{min-height:70px}}
 
+html{scroll-padding-bottom:90px} #notice{pointer-events:none} button,summary,input,textarea,select{scroll-margin-block:12px 90px}

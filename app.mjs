@@ -78,7 +78,7 @@ async function taskView(){
   if(t.id==='shadow'){
     ex.innerHTML='<h2>重ね読み → 追いかけ読み</h2><p>同じチャンクを2回聞き、原稿を見ながら重ね読みします。次に原稿を隠して一拍遅れて発話し、録音を聞き比べてください。</p><div id="player"></div><div id="recorder"></div>';
     parts.push(await mountPlayer(query('#player'),{lesson,model:narration[day]}));
-    parts.push(await mountStudio(query('#recorder'),{day,text:lesson.script,purpose:'shadow',label:'シャドーイングの録音',credentials,modelFile:narration[day]?.file}));
+    parts.push(await mountStudio(query('#recorder'),{day,text:lesson.script,purpose:'shadow',hideScript:true,label:'シャドーイングの録音',credentials,modelFile:narration[day]?.file}));
   }
   if(t.id==='pronounce'){
     ex.innerHTML='<p class="tip">'+esc(lesson.cue)+'</p>'+(due.length?'<h3>今日の優先語</h3>'+wordRow(due[0]):'')+'<div id="diagnostic"></div>';
@@ -116,7 +116,8 @@ function review(){
 }
 async function word(){
   const w=items.find(i=>i.word===practiceWord);const d=getDrill(practiceWord);
-  view.innerHTML='<p class="eyebrow">単語の復習</p><h1 lang="en-GB">'+esc(practiceWord)+'</h1><p class="meta">'+esc(w?.source||'選択した語')+' ・ 単語の結果から音素の原因は特定できません。</p>'+drillHTML(d,practiceWord)+(w?.misses>=2?'<p class="tip">複数回要確認になった語です。今回は違いを聞き分けてから録り、次のCamblyで原稿を見せずに聞き取った語を尋ねてください。</p>':'')+'<div id="recorder"></div><h2>録音を聞いた自己確認</h2><div class="actions">'+btn('review-success','改善を確認した','primary')+btn('review-again','もう一度練習する')+'</div>';
+  const observations=events.filter(e=>e.kind==='assess').sort((a,b)=>b.at-a.at).flatMap(e=>e.result.words.filter(word=>word.word.toLowerCase()===practiceWord&&word.accuracy!=null).map(word=>'<p>'+esc(e.date)+' ・ 精度 '+esc(word.accuracy)+'　<span lang="en-GB">'+esc(e.result.referenceText)+'</span></p>'));
+  view.innerHTML='<p class="eyebrow">単語の復習</p><h1 lang="en-GB">'+esc(practiceWord)+'</h1><p class="meta">'+esc(w?.source||'選択した語')+' ・ 単語の結果から音素の原因は特定できません。</p>'+drillHTML(d,practiceWord)+(observations.length?'<details><summary>この語の採点履歴</summary>'+observations.join('')+'<small>原稿・課題が異なる評価は条件が異なります。音素名は特定不可。</small></details>':'')+(w?.misses>=2?'<p class="tip">複数回要確認になった語です。今回は違いを聞き分けてから録り、次のCamblyで原稿を見せずに聞き取った語を尋ねてください。</p>':'')+'<div id="recorder"></div><h2>録音を聞いた自己確認</h2><div class="actions">'+btn('review-success','改善を確認した','primary')+btn('review-again','もう一度練習する')+'</div>';
   parts.push(await mountStudio(query('#recorder'),{day,text:d?.sentence||practiceWord,editable:true,purpose:'review',label:'再録音して比較',credentials}));
 }
 async function studio(){
@@ -205,18 +206,26 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('input',e=>{if(page==='task'&&['task-note','achieved'].includes(e.target.id))rememberTask();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)rememberTask();tick();});
+document.querySelector('.brand').addEventListener('click',event=>{event.preventDefault();if(!working)go('home').catch(e=>notice(errorText(e)));});
 setInterval(tick,1000);
 addEventListener('voiceerror',e=>notice(e.detail));
 let pendingUpdate=false;
 async function checkUpdate(){
   if(!reg)throw Error('更新を確認できません。HTTPSとネットワーク接続を確認してください。');
-  await reg.update();if(reg.installing){notice('新しい教材を保存中です。完了後にお知らせします。');return;}
-  if(reg.waiting){if(locked())throw Error('録音・保存完了後に更新してください。');rememberTask();timer.pause();pendingUpdate=true;reg.waiting.postMessage('ACTIVATE');}
+  if(!reg.waiting)await reg.update();
+  const next=reg.waiting;
+  if(next){
+    if(locked())throw Error('録音・保存完了後に更新してください。');
+    rememberTask();timer.pause();pendingUpdate=true;
+    next.addEventListener('statechange',()=>{if(next.state==='activated'&&pendingUpdate){pendingUpdate=false;location.reload();}});
+    next.postMessage('ACTIVATE');
+  }else if(reg.installing)notice('新しい教材を保存中です。完了後にお知らせします。');
   else notice('最新の教材です。');
 }
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(pendingUpdate)location.reload();});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(pendingUpdate){pendingUpdate=false;location.reload();}});
   navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(r=>{reg=r;const ready=()=>notice('新しい教材があります。設定の「更新を確認」から反映できます。');if(r.waiting)ready();r.addEventListener('updatefound',()=>{const w=r.installing;w?.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)ready();});});}).catch(()=>notice('オフライン教材を保存できませんでした。オンラインで再度開いてください。'));
 }
-try{await migrateLegacy();await render();}catch(e){root.textContent='学習データを開けません。ブラウザの保存設定と空き容量を確認してください。 '+errorText(e);}
+try{await migrateLegacy();}catch{notice('旧版の履歴を自動で取り込めませんでした。設定からバックアップを復元できます。');}
+try{await render();}catch(e){root.textContent='学習データを開けません。ブラウザの保存設定と空き容量を確認してください。 '+errorText(e);}
 

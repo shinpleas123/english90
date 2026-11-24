@@ -8,7 +8,7 @@ async function walk(dir) {
   const entries=await readdir(path.join(root,dir),{withFileTypes:true});
   return (await Promise.all(entries.map(e=>e.isDirectory()?walk(dir+'/'+e.name):dir+'/'+e.name))).flat();
 }
-const names=['index.html','style.css','app.mjs','manifest.webmanifest',...await walk('lib'),...await walk('content'),...await walk('assets')].sort();
+const names=['index.html','style.css','app.mjs','manifest.webmanifest','docs/AUDIO.md',...await walk('lib'),...await walk('content'),...await walk('assets')].sort();
 const hash=createHash('sha256');
 for(const name of names){hash.update(name);hash.update(await readFile(path.join(root,name)));}
 const version=hash.digest('hex').slice(0,16);
@@ -19,7 +19,7 @@ const files=${JSON.stringify(names)};
 const urls=new Set(files.map(file=>new URL(file,self.registration.scope).href));
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const c=await caches.open(cacheName);
- try {for(const file of files)await c.add(new Request(new URL(file,self.registration.scope),{cache:'reload'}));}
+ try {await c.addAll(files.map(file=>new Request(new URL(file,self.registration.scope),{cache:'reload'})));}
  catch(error){await caches.delete(cacheName);throw error;}
 })()));
 self.addEventListener('message',event=>{if(event.data==='ACTIVATE')event.waitUntil(self.skipWaiting());});
