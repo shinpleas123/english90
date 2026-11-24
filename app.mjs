@@ -176,9 +176,10 @@ async function handle(button){
     const checked=query('input[name=answer]:checked');if(!checked)throw Error('回答を一つ選択してください。');
     const correct=Number(checked.value)===lesson.answer, typed=query('#dictation').value.trim(),value=dictation(lesson.chunks[0],typed);
     const first=!events.some(e=>e.kind==='listen'&&e.day===day);
-    await recordEvent({kind:'listen',day,correct,dictation:value,typed,first,chosen:Number(checked.value)});
+    const conditions=parts.find(p=>p.listeningConditions)?.listeningConditions();
+    await recordEvent({kind:'listen',day,correct,dictation:value,typed,first,conditions,chosen:Number(checked.value)});
     quizDone=true;await data();
-    query('#answer-result').innerHTML='<p class="tip">'+(correct?'正解です。':'正答　'+esc(lesson.options[lesson.answer]))+'　'+(first?'初回':'再練習')+'として保存しました。</p>'+(typed?'<p>書き取り '+value+'% ・ 正しいチャンク</p><p lang="en-GB">'+esc(lesson.chunks[0])+'</p>':'')+'<p>原稿で根拠を確かめ、再度聞いてください。</p>';button.disabled=true;
+    query('#answer-result').innerHTML='<p class="tip">'+(correct?'正解です。':'正答　'+esc(lesson.options[lesson.answer]))+'　'+(first&&conditions?.independent?'初回・標準条件':'練習条件')+'として保存しました。</p>'+(typed?'<p>書き取り '+value+'% ・ 正しいチャンク</p><p lang="en-GB">'+esc(lesson.chunks[0])+'</p>':'')+'<p>原稿で根拠を確かめ、再度聞いてください。</p>';button.disabled=true;
   }
   if(action==='variant'||action==='reveal-fresh'){
     rememberTask();variant=button.dataset.variant||'fresh';revealFresh=false;
@@ -212,15 +213,22 @@ addEventListener('voiceerror',e=>notice(e.detail));
 let pendingUpdate=false;
 async function checkUpdate(){
   if(!reg)throw Error('更新を確認できません。HTTPSとネットワーク接続を確認してください。');
-  if(!reg.waiting)await reg.update();
-  const next=reg.waiting;
-  if(next){
-    if(locked())throw Error('録音・保存完了後に更新してください。');
-    rememberTask();timer.pause();pendingUpdate=true;
-    next.addEventListener('statechange',()=>{if(next.state==='activated'&&pendingUpdate){pendingUpdate=false;location.reload();}});
-    next.postMessage('ACTIVATE');
-  }else if(reg.installing)notice('新しい教材を保存中です。完了後にお知らせします。');
-  else notice('最新の教材です。');
+  const current=await navigator.serviceWorker.getRegistration();
+  if(!current)throw Error('アプリをオンラインで開いてから更新してください。');
+  if(!current.waiting&&!current.installing)await current.update();
+  const next=current.waiting||current.installing;
+  if(!next){notice('最新の教材です。');return;}
+  if(next.state==='installing'){
+    notice('新しい教材音声を保存しています。');
+    await new Promise((resolve,reject)=>{
+      const check=()=>{if(next.state==='installing')return;next.removeEventListener('statechange',check);next.state==='redundant'?reject(Error('更新できません。通信と空き容量を確認してください。')):resolve();};
+      next.addEventListener('statechange',check);check();
+    });
+  }
+  if(locked())throw Error('録音・保存完了後に更新してください。');
+  rememberTask();timer.pause();pendingUpdate=true;
+  next.addEventListener('statechange',()=>{if(next.state==='activated'&&pendingUpdate){pendingUpdate=false;location.reload();}});
+  next.postMessage('ACTIVATE');
 }
 if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(pendingUpdate){pendingUpdate=false;location.reload();}});

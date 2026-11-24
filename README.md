@@ -32,7 +32,7 @@ npm run test:browser
 npm run build:offline
 ```
 
-インストール済みChromeを使う場合は環境変数 `BROWSER_CHANNEL=chrome`。WebKit検証は `npx playwright install webkit` の後に `ENGINE=webkit node tests/pwa.browser.mjs`。オフライン対象を編集したら必ず `npm run build:offline` で `sw.js` を再生成します。開発時は親ディレクトリで `python -m http.server 8000` を起動し、配下のリポジトリURLを開きます。
+インストール済みChromeを使う場合は環境変数 `BROWSER_CHANNEL=chrome`。任意のAAC/M4Aファイルのパスを環境変数 `ENGLISH90_M4A_FIXTURE` に設定すると、Chromeでのファイル取込検証も実行します。WebKit検証は `npx playwright install webkit` の後に `ENGINE=webkit node tests/pwa.browser.mjs`。オフライン対象を編集したら必ず `npm run build:offline` で `sw.js` を再生成します。開発時は親ディレクトリで `python -m http.server 8000` を起動し、配下のリポジトリURLを開きます。
 
 本番の配信元はGitHubのSettings → Pages → Deploy from a branch → main / (root) を想定します。マージ後にPagesのデプロイ成功とルートURLの応答を確認してください。[Pagesの配信元](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
 

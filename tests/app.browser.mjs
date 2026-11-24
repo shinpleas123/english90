@@ -58,7 +58,7 @@ try{
   assert.equal(await p.getByRole('button',{name:'開く',exact:true}).count(),1);
   await p.getByRole('button',{name:'設定',exact:true}).click();
   const download=p.waitForEvent('download');await p.getByRole('button',{name:'バックアップを保存'}).click();
-  const backupPath=await(await download).path(),backup=JSON.parse(await readFile(backupPath));assert.equal(backup.clips.length,1);assert.ok(backup.media[0].data.length>0);assert.ok(!JSON.stringify(backup).includes('fixture-only'));
+  const backupPath=await(await download).path(),backup=JSON.parse(await readFile(backupPath));assert.equal(backup.clips.length,1);assert.equal(backup.events.find(e=>e.kind==='listen').conditions.independent,false);assert.ok(backup.media[0].data.length>0);assert.ok(!JSON.stringify(backup).includes('fixture-only'));
   await p.getByRole('button',{name:'実績',exact:true}).click();await p.getByRole('button',{name:'削除',exact:true}).click();await p.getByText('保存した録音はまだありません。').waitFor();
   await p.getByRole('button',{name:'設定',exact:true}).click();await p.locator('#restore').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(backup))});await p.getByText(/1件の音声を復元しました/).first().waitFor();
   await p.locator('#restore').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{"version":999}')});await p.getByText(/既存データは保持/).first().waitFor();
