@@ -80,7 +80,10 @@ try{
       console.log('PASS real MP3 import and byte-preserving IndexedDB media across browser process restart.');
       if(process.env.ENGLISH90_M4A_FIXTURE){
         await reopened.getByRole('button',{name:'発音診断',exact:true}).click();
-        await reopened.locator('input[data-file=learner]').setInputFiles(process.env.ENGLISH90_M4A_FIXTURE);
+        await reopened.getByRole('heading',{name:'音読と録音',exact:true}).waitFor();
+        await reopened.getByText('音声ファイルを読み込む',{exact:true}).click();
+        const m4a=await readFile(process.env.ENGLISH90_M4A_FIXTURE);
+        await reopened.locator('input[data-file=learner]').setInputFiles({name:'test.m4a',mimeType:'audio/mp4',buffer:m4a});
         await reopened.getByText('音声を保存しました。',{exact:true}).waitFor();
         const durations=await reopened.evaluate(async()=>{const {all}=await import('./lib/store.mjs');return (await all('clips')).map(c=>c.analysis.duration);});
         assert.equal(durations.length,2);assert.ok(durations.every(v=>v>0));

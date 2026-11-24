@@ -1,8 +1,8 @@
 import {lessons,makePlan,baseline,checkpoints} from './content/curriculum.mjs';
 import {narration} from './content/narration.mjs';
 import {getDrill} from './content/drills.mjs';
-import {all,get,saveSetting,localDate,recordEvent,migrateLegacy,deleteClip} from './lib/store.mjs';
-import {programmeDay,dictation,reviewItems,plusDays} from './lib/derive.mjs';
+import {all,get,saveSetting,localDate,recordEvent,migrateLegacy,deleteClip,firstMaterialVisit} from './lib/store.mjs';
+import {programmeDay,dictation,reviewItems,plusDays,practiceFromRatings} from './lib/derive.mjs';
 import {esc,btn,notice,errorText,time,icon,drillHTML,acoustic} from './lib/ui.mjs';
 import {mountStudio} from './lib/studio.mjs';
 import {mountPlayer} from './lib/player.mjs';
@@ -28,8 +28,8 @@ async function data(){
   start=values.start||'2026-11-28';mode=values.mode||'full';today=localDate();calendar=programmeDay(start,today);
   day=selected??(calendar<1?1:(calendar-1)%90+1);lesson=lessons[day-1];
   plan=makePlan(day,mode==='short');events=e;clips=c;items=reviewItems(e);due=items.filter(w=>w.due<=today);
-  const prev=e.filter(x=>x.kind==='listen'&&x.first!==false&&x.date<today).sort((a,b)=>b.at-a.at).slice(0,3);
-  listenScaffold=prev.length>0&&prev.filter(e=>e.correct).length/prev.length<.67;
+  const prev=e.filter(x=>x.kind==='listen'&&x.first&&x.conditions?.independent&&x.date<today).sort((a,b)=>b.at-a.at).slice(0,3);
+  listenScaffold=!checkpoints[day]&&prev.length>0&&prev.filter(e=>e.correct).length/prev.length<2/3;
 }
 function navBar(){
   nav.innerHTML=sections.map(([id,title])=>'<button data-nav="'+id+'" '+((page===id||(id==='home'&&page==='task')||(id==='history'&&page==='clip'))?'aria-current="page"':'')+'>'+icon(id)+'<span>'+title+'</span></button>').join('');
@@ -70,12 +70,14 @@ async function taskView(){
   const ex=query('#exercise');
   if(t.id==='listen'){
     quizDone=false;
+    const firstVisit=await firstMaterialVisit(day);
     ex.innerHTML=`<div id="player"></div><h2>内容を確認</h2><p>${esc(lesson.question)}</p>
     <div class="stack">${lesson.options.map((s,i)=>'<label class="check"><input type="radio" name="answer" value="'+i+'">'+esc(s)+'</label>').join('')}</div>
     <label class="field">チャンク1の書き取り（任意）<textarea id="dictation" lang="en-GB"></textarea></label>${btn('answer','回答を記録','primary')}<div id="answer-result" role="status"></div>`;
-    parts.push(await mountPlayer(query('#player'),{lesson,model:narration[day],hideText:true,scaffold:listenScaffold}));
+    parts.push(await mountPlayer(query('#player'),{lesson,model:narration[day],hideText:true,scaffold:listenScaffold,firstVisit}));
   }
   if(t.id==='shadow'){
+    await firstMaterialVisit(day);
     ex.innerHTML='<h2>重ね読み → 追いかけ読み</h2><p>同じチャンクを2回聞き、原稿を見ながら重ね読みします。次に原稿を隠して一拍遅れて発話し、録音を聞き比べてください。</p><div id="player"></div><div id="recorder"></div>';
     parts.push(await mountPlayer(query('#player'),{lesson,model:narration[day]}));
     parts.push(await mountStudio(query('#recorder'),{day,text:lesson.script,purpose:'shadow',hideScript:true,label:'シャドーイングの録音',credentials,modelFile:narration[day]?.file}));
@@ -83,7 +85,10 @@ async function taskView(){
   if(t.id==='pronounce'){
     ex.innerHTML='<p class="tip">'+esc(lesson.cue)+'</p>'+(due.length?'<h3>今日の優先語</h3>'+wordRow(due[0]):'')+'<div id="diagnostic"></div>';
     if(checkpoints[day])await assessmentPicker(query('#diagnostic'));
-    else parts.push(await mountStudio(query('#diagnostic'),{day,text:lesson.script,purpose:'lesson',label:'単語と文で録る',editable:true,credentials,modelFile:narration[day]?.file}));
+    else {
+      await firstMaterialVisit(day);
+      parts.push(await mountStudio(query('#diagnostic'),{day,text:lesson.script,purpose:'lesson',label:'単語と文で録る',editable:true,credentials,modelFile:narration[day]?.file}));
+    }
   }
   if(t.id==='speak'){
     ex.innerHTML='<p class="tip">'+esc(lesson.prompt)+'</p><div id="recorder"></div>';
@@ -92,6 +97,8 @@ async function taskView(){
   if(t.id==='reflect'){
     ex.innerHTML='<h2>今日の振り返り</h2><p>録音や聞き取りから、変化が分かる箇所を一つ選んでください。次にどう試すかを下の記録に残します。</p><label class="field">復習したい単語・語句<input id="new-word" lang="en-GB" placeholder="例　households"></label>'+btn('add-word','翌日の復習に追加');
   }
+  const focus=practiceFromRatings(events,today,t.id);
+  if(focus)ex.insertAdjacentHTML('afterbegin','<p class="tip">前回の自己評価「'+esc(focus.skill)+'・要練習」　'+esc(focus.exercise)+'</p>');
   tick();
 }
 const evalType=()=>day===1?'初期診断':day===90?'総合評価':day===30||day===60?'中間評価':'週次評価';
@@ -121,6 +128,7 @@ async function word(){
   parts.push(await mountStudio(query('#recorder'),{day,text:d?.sentence||practiceWord,editable:true,purpose:'review',label:'再録音して比較',credentials}));
 }
 async function studio(){
+  await firstMaterialVisit(day);
   view.innerHTML='<p class="eyebrow">English (United Kingdom)</p><h1>発音診断</h1><p>録音を保存して聞き比べ、必要な区間だけ採点できます。</p>'+(checkpoints[day]?'<div class="actions">'+btn('open-check',evalType()+'を開く')+'</div>':'')+'<div id="recorder"></div>';
   parts.push(await mountStudio(query('#recorder'),{day,text:lesson.script,purpose:'practice',editable:true,label:'音読と録音',credentials,modelFile:narration[day]?.file}));
 }

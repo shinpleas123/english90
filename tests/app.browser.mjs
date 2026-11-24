@@ -36,6 +36,9 @@ try{
   await p.waitForFunction(()=>document.querySelector('[data-el=audio]').currentTime>0);
   await p.getByRole('button',{name:'停止',exact:true}).click();
   await p.getByRole('button',{name:'原稿を表示'}).click();assert.ok((await p.locator('[data-el=script]').innerText()).includes(lessons[0].chunks[0]));
+  await p.reload();await p.getByRole('button',{name:'中断した学習を再開'}).click();
+  await p.getByRole('button',{name:'お手本を再生'}).click();
+  await p.getByText('再生が終わりました。',{exact:true}).waitFor({timeout:25000});
   await p.locator('input[name=answer]').nth(lessons[0].answer).check();await p.locator('#dictation').fill(lessons[0].chunks[0]);
   await p.getByRole('button',{name:'回答を記録'}).click();await p.getByText(/書き取り 100%/).waitFor();
   await p.locator('#achieved').check();await p.getByRole('button',{name:'完了して記録'}).click();
@@ -48,6 +51,12 @@ try{
   await p.getByRole('button',{name:'録音を停止'}).click();await p.getByText('音声を保存しました。',{exact:true}).waitFor();
   assert.ok(await p.locator('audio').first().evaluate(async a=>{await a.play();a.pause();return a.duration>0;}));
   await p.getByText('Azureで区間を採点').click();let status=429;
+  await p.locator('[data-el=to]').fill('0.50');
+  await p.locator('[data-el=reference]').focus();
+  assert.equal(await p.locator('[data-el=reference]').inputValue(),'');
+  await p.getByRole('button',{name:'区間を送信して採点'}).click();
+  await p.getByText(/選択した区間で読んだ英文を入力/).first().waitFor();
+  await p.locator('[data-el=reference]').fill('Growth.');
   await ctx.route('https://japaneast.stt.speech.microsoft.com/**',r=>r.fulfill({status,contentType:'application/json',body:JSON.stringify({RecognitionStatus:'Success',NBest:[{AccuracyScore:78,FluencyScore:76,Words:[{Word:'growth',AccuracyScore:61,Phonemes:[{AccuracyScore:45}]}]}]})}));
   await p.getByRole('button',{name:'区間を送信して採点'}).click();await p.getByText(/Azure HTTP 429/).first().waitFor();
   status=200;await p.getByRole('button',{name:'区間を送信して採点'}).click();await p.getByRole('heading',{name:'Azure の採点結果'}).waitFor();
@@ -85,6 +94,7 @@ try{
   assert.equal(decoded,90);await ctx.setOffline(false);
   await p.getByRole('button',{name:'発音診断',exact:true}).click();await p.getByRole('button',{name:'初期診断を開く'}).click();await p.getByRole('button',{name:'初見比較原稿',exact:true}).click();
   await p.getByRole('button',{name:'比較原稿を開く'}).click();await p.getByRole('heading',{name:'比較原稿を録音'}).waitFor();
+  assert.equal(await p.getByRole('button',{name:'お手本を聞く',exact:true}).count(),0);
   await p.getByRole('button',{name:'固定原稿',exact:true}).click();await p.getByRole('button',{name:'初見比較原稿',exact:true}).click();await p.getByText(/この原稿は以前に表示済みです/).waitFor();
   await p.getByRole('button',{name:'今日の学習',exact:true}).click();await p.getByRole('button',{name:'60 分',exact:true}).click();
   await p.locator('[data-task=shadow]').click();await p.getByRole('heading',{name:'シャドーイング',exact:true}).waitFor();await p.getByText('原稿を隠す',{exact:true}).click();assert.ok(!(await p.locator('main').innerText()).includes(lessons[0].script));await shot(p,'shadow');

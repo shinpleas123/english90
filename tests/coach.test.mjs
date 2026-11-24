@@ -2,8 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {lessons,makePlan,baseline,checkpoints} from '../content/curriculum.mjs';
 import {DRILLS,getDrill} from '../content/drills.mjs';
-import {programmeDay,dictation,reviewItems,scorePeers} from '../lib/derive.mjs';
+import {programmeDay,dictation,reviewItems,scorePeers,practiceFromRatings} from '../lib/derive.mjs';
 import {analyseSamples} from '../lib/audio.mjs';
+test('a later missed occurrence is reviewed once per recorded interval',()=>{
+  const sample={kind:'assess',date:'2026-11-28',at:1,clipId:'clip',result:{start:0,end:3,referenceText:'Work to work.',
+    words:[{word:'work',accuracy:95},{word:'to',accuracy:90},{word:'work',accuracy:null,errorType:'Omission'}]}};
+  const items=reviewItems([sample,{...sample,at:2}]);
+  assert.equal(items.length,1);
+  assert.equal(items[0].word,'work');
+  assert.equal(items[0].misses,1);
+  assert.equal(items[0].due,'2026-11-29');
+});
+test('only previous measured self-ratings change the next matching task',()=>{
+  const check={kind:'check',day:1,date:'2026-11-28',at:1,ratings:{母音:'要練習',精聴:'明瞭にできた'}};
+  assert.equal(practiceFromRatings([check],check.date,'pronounce'),null);
+  assert.equal(practiceFromRatings([check],'2026-11-29','pronounce').skill,'母音');
+  assert.equal(practiceFromRatings([check],'2026-11-29','listen'),null);
+  const later={...check,at:2,date:'2026-11-29',ratings:{母音:'未測定'}};
+  assert.equal(practiceFromRatings([later,check],'2026-11-30','pronounce').skill,'母音');
+  later.ratings.母音='明瞭にできた';
+  assert.equal(practiceFromRatings([later,check],'2026-11-30','pronounce'),null);
+});
 test('90 original daily tasks with complete full and short plans',()=>{
   assert.equal(lessons.length,90);
   for(const field of ['title','script','cue','prompt','question'])assert.equal(new Set(lessons.map(l=>l[field])).size,90);

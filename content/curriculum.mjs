@@ -21,7 +21,7 @@ add('引き継ぎの遅れを聞き分ける', '診断用に、普段の音読�
   '作業を再開できたきっかけは何ですか。','列見出しを確認できた','数値を再計算した','夜勤担当が戻った',
   '引き継ぎが遅れた理由と、引き継いだ同僚が最初に確認すべきことを、自分の言葉で説明する。');
 add('支店に届いた二つの依頼', '短い /ɪ/ と長い /iː/ を語の意味と結ぶ', 'sheet',
-  'sheet /ʃiːt/ と ship /ʃɪp/ を聞き比べる。sheet の母音は舌を高めに置き、語末の /t/ まで息をつなぐ。',
+  'sheep /ʃiːp/ と ship /ʃɪp/ を交互に言い、同じ語末で母音の質と長さを比べる。次に sheep の母音を sheet /ʃiːt/ に移して本文の句を読む。',
   'The branch asked for a clean sheet of figures | before it would sign off the change. | A colleague offered to split the file, | but that would have left the totals in two places.',
   'ファイルを分ける案にはどんな欠点がありますか。','合計が二か所に分かれる','承認者が増える','元の数値が消える',
   '分割と一枚への集約のどちらを提案するか、誤読のリスクを一つ添えて支店に伝える。');
@@ -163,7 +163,7 @@ add('受け渡し場所を指示する', '指示語と新情報の強勢を調�
 add('月末の原因と対応を要約する', '30日目に母音・子音・強勢・弱形を再点検する', 'pressure',
   'pressure /ˈpreʃə/ の最初に核を置き、語末を軽くする。定点原稿から pressure を含むまとまりを一つ選び、初日の同じ箇所と聞き比べる。',
   'Pressure on the help desk eased after the new guide went out. | The fall was greatest among staff who had joined recently. | Experienced colleagues still raised complex questions, | suggesting that they needed a different kind of support.',
-  'ガイド配布後に最も問い合わせが減った層はどこですか。','最近入社した職員','経験豊富な職員','外部の利用者',
+  '担当者が追加の支援を検討するなら、どの判断が報告に合いますか。','新任者に効果が見られた一方、経験者には複雑な質問向けの支援を試す','新任者は複雑な質問を続けたので、経験者用のガイドに切り替える','問い合わせ全体が減ったので、両方の層に同程度の効果があったと伝える',
   '全体傾向、層別の違い、次に確かめることの三点を、原稿を閉じて報告する。');
 
 add('見出しから事実を拾う', '語末子音と次の母音をつなげる', 'pick up',
@@ -314,7 +314,7 @@ add('話を遮られてから再開する', '短い再開フレーズで主張�
 add('中間評価でニュースを要約する', '60日目に句境界・核強勢・初見転移を点検する', 'provisional',
   'provisional の主強勢を先に確かめ、provisional figures をまとめて読む。定点原稿と別の初見原稿を同じ条件で録る。',
   'Provisional figures suggest that demand has levelled off. | The conclusion is less certain in rural areas, | where several offices have yet to submit their returns. | A fuller picture should emerge when the final figures are published next week.',
-  '農村部の判断が難しい理由は何ですか。','未提出の拠点が残っている','需要が必ず増え続ける','最終数値が今週削除された',
+  '会議で現時点の状況を一文で伝えるなら、どれが正確ですか。','全体は横ばいに見えるが、農村部は未提出分を含む来週の数字を待つ','農村部の数字はそろったが、都市部は未提出分を含む来週の数字を待つ','全体の横ばいは確定し、来週はその原因を調べた結果だけが出る',
   '45秒のニュース原稿を即興で作り、見出し、適用範囲の留保、次の公表予定を伝える。');
 
 add('データ責任者を決める', '質問の焦点を owner と sign-off に分ける', 'owner',
@@ -465,7 +465,7 @@ add('ロンドンの着任初日に自己紹介する', '職務紹介を短い�
 add('90日目の委員会ブリーフィング', '既知原稿・初見原稿・即興発話を総合評価する', 'recommendation',
   'recommendation の主強勢を確かめ、our recommendation is to の後の動詞を明瞭にする。録り直しの前に理由、数字、次の判断者が伝わったか聴く。',
   'Our recommendation is to publish the group total today, | with a note explaining that one regional figure is still under review. | The team will replace the note once the local owner confirms the corrected mapping. | Until then, comparisons involving that region should be treated with care.',
-  '地域の注記を更新する条件は何ですか。','地域の責任者が修正済み対応表を確認する','全体の公表を取り消す','次の四半期が始まる',
+  '委員会で承認を求めた公表順序と、比較上の注意の組合せはどれですか。','全体は今日注記付きで公表し、地域責任者の確認まではその地域を含む比較を慎重に扱う','全体は今日公表し、修正対応表が完成した時点で責任者の確認を待たずに注記を外す','地域責任者の確認後に全体を初めて公表し、それまでは他地域同士の比較も保留する',
   '架空の委員会に一分で勧告し、「今公表する理由」「地域の制限」「次報の条件」という三つの追質問に一文ずつ答える。');
 
 export const lessons = rows;
